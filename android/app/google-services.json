@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "692792229669",
+    "project_id": "mathcorn",
+    "storage_bucket": "mathcorn.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:692792229669:android:0720c73418397b7483e4cc",
+        "android_client_info": {
+          "package_name": "com.learning.math_corn"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7mtaYclPIuqu1k6Qhn6kIYTHdw_slUds"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

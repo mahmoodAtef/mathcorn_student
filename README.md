@@ -84,7 +84,7 @@ To get a local copy up and running, follow these steps:
 
 2.  **Clone the repository**:
     ```bash
-    git clone <repository-url>
+    git clone (https://github.com/mahmoodAtef/mathcorn_student)
     cd mathcorn_student
     ```
 
@@ -109,5 +109,3 @@ flutter run
 | Login Screen | Home Dashboard | Course Details |
 | :---: | :---: | :---: |
 | ![Login](assets/images/placeholder_login.png) | ![Home](assets/images/placeholder_home.png) | ![Course](assets/images/placeholder_course.png) |
-
-*(Note: Replace placeholder paths with actual screenshots)*
