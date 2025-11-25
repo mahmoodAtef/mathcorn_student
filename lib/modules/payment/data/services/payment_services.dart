@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,6 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_paymob/billing_data.dart' show BillingData;
 import 'package:flutter_paymob/flutter_paymob.dart';
+import 'package:math_corn/core/error/custom_exceptions/payment_exception.dart';
 import 'package:math_corn/modules/payment/data/models/access_request.dart';
 
 class PaymentServices {
@@ -14,10 +16,9 @@ class PaymentServices {
   final FlutterPaymob _flutterPaymob = FlutterPaymob.instance;
   final FirebaseStorage _firebaseStorage = FirebaseStorage.instance;
 
-  // تأكد من استخدام الـ API Key الصحيح من لوحة تحكم Paymob
   static const String _apiKey =
-      "ZXlKaGJHY2lPaUpJVXpVeE1pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SmpiR0Z6Y3lJNklrMWxjbU5vWVc1MElpd2ljSEp2Wm1sc1pWOXdheUk2TVRBM01qSTVNeXdpYm1GdFpTSTZJbWx1YVhScFlXd2lmUS41WFZFcG5NQ0h4MVFSckxTRkc4dGtQQkVqM2htcUNoV2ZUZkZEYVNKbUNDbUVJNnZGU2k2M1dwQ3NWX3kzbHNldEVwOEFWQWhxR3NTRVBYZTNNMVU5Zw=="; // ضع هنا الـ API key الصحيح
-  static const int _integrationID = 5257755; // تأكد من Integration ID
+      "ZXlKaGJHY2lPaUpJVXpVeE1pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SmpiR0Z6Y3lJNklrMWxjbU5vWVc1MElpd2ljSEp2Wm1sc1pWOXdheUk2TVRBM01qSTVNeXdpYm1GdFpTSTZJbWx1YVhScFlXd2lmUS41WFZFcG5NQ0h4MVFSckxTRkc4dGtQQkVqM2htcUNoV2ZUZkZEYVNKbUNDbUVJNnZGU2k2M1dwQ3NWX3kzbHNldEVwOEFWQWhxR3NTRVBYZTNNMVU5Zw==";
+  static const int _integrationID = 5257755;
   static const int _walletIntegrationId = 5257761;
   static const int _iFrameID = 954388;
 
@@ -28,59 +29,53 @@ class PaymentServices {
     required BillingData billingData,
   }) async {
     try {
-      // التحقق من صحة البيانات قبل البدء
-      if (courses.isEmpty) {
-        throw Exception("قائمة الكورسات فارغة");
-      }
-
-      if (price <= 0) {
-        throw Exception("المبلغ غير صحيح");
-      }
-
+      _validatePaymentInput(courses, price);
       await _initializePaymob();
 
-      bool paymentCompleted = false;
-      String? errorMessage;
+      final Completer<void> paymentCompleter = Completer<void>();
 
-      await _flutterPaymob.payWithCard(
+      _flutterPaymob.payWithCard(
         amount: price,
         context: context,
         currency: "EGP",
         appBarColor: Theme.of(context).primaryColor,
         billingData: billingData,
         onPayment: (paymentResponse) async {
-          print("Payment Response: ${paymentResponse.success}");
-          print("Payment Message: ${paymentResponse.message}");
-
-          if (paymentResponse.success) {
-            try {
+          try {
+            if (paymentResponse.success) {
               await addCoursesToUser(courses);
-              paymentCompleted = true;
-              print("Courses added successfully");
-            } catch (e) {
-              print("Error adding courses: $e");
-              errorMessage = "فشل في إضافة الكورسات: ${e.toString()}";
+              if (!paymentCompleter.isCompleted) {
+                paymentCompleter.complete();
+              }
+            } else {
+              if (!paymentCompleter.isCompleted) {
+                paymentCompleter.completeError(
+                  PaymentException(
+                    message: paymentResponse.message ?? "فشل في عملية الدفع",
+                    type: PaymentErrorType.paymentFailed,
+                  ),
+                );
+              }
             }
-          } else {
-            print("Payment failed: ${paymentResponse.message}");
-            errorMessage = paymentResponse.message ?? "فشل في عملية الدفع";
+          } catch (e) {
+            if (!paymentCompleter.isCompleted) {
+              paymentCompleter.completeError(_createPaymentException(e));
+            }
           }
         },
       );
 
-      if (!paymentCompleted) {
-        throw Exception(errorMessage ?? "فشل في إتمام عملية الدفع");
-      }
+      await paymentCompleter.future.timeout(
+        Duration(minutes: 5),
+        onTimeout: () {
+          throw PaymentException(
+            message: "انتهت مهلة عملية الدفع",
+            type: PaymentErrorType.timeout,
+          );
+        },
+      );
     } catch (e) {
-      print("Payment with card error: $e");
-      // تحسين رسالة الخطأ
-      String errorMsg = e.toString();
-      if (errorMsg.contains("Error getting API key")) {
-        errorMsg = "خطأ في مفتاح API - يرجى التحقق من صحة البيانات";
-      } else if (errorMsg.contains("Network")) {
-        errorMsg = "خطأ في الاتصال بالإنترنت";
-      }
-      throw Exception("خطأ في عملية الدفع بالكارت: $errorMsg");
+      throw _createPaymentException(e);
     }
   }
 
@@ -92,25 +87,20 @@ class PaymentServices {
     required String number,
   }) async {
     try {
-      // التحقق من صحة البيانات
-      if (courses.isEmpty) {
-        throw Exception("قائمة الكورسات فارغة");
-      }
-
-      if (price <= 0) {
-        throw Exception("المبلغ غير صحيح");
-      }
+      _validatePaymentInput(courses, price);
 
       if (number.isEmpty) {
-        throw Exception("رقم المحفظة مطلوب");
+        throw PaymentException(
+          message: "رقم المحفظة مطلوب",
+          type: PaymentErrorType.wallet,
+        );
       }
 
       await _initializePaymob();
 
-      bool paymentCompleted = false;
-      String? errorMessage;
+      final Completer<void> paymentCompleter = Completer<void>();
 
-      await _flutterPaymob.payWithWallet(
+      _flutterPaymob.payWithWallet(
         number: number,
         amount: price,
         context: context,
@@ -118,38 +108,41 @@ class PaymentServices {
         appBarColor: Theme.of(context).primaryColor,
         billingData: billingData,
         onPayment: (paymentResponse) async {
-          print("Wallet Payment Response: ${paymentResponse.success}");
-          print("Wallet Payment Message: ${paymentResponse.message}");
-
-          if (paymentResponse.success) {
-            try {
+          try {
+            if (paymentResponse.success) {
               await addCoursesToUser(courses);
-              paymentCompleted = true;
-              print("Courses added successfully via wallet");
-            } catch (e) {
-              print("Error adding courses via wallet: $e");
-              errorMessage = "فشل في إضافة الكورسات: ${e.toString()}";
+              if (!paymentCompleter.isCompleted) {
+                paymentCompleter.complete();
+              }
+            } else {
+              if (!paymentCompleter.isCompleted) {
+                paymentCompleter.completeError(
+                  PaymentException(
+                    message: paymentResponse.message ?? "فشل في عملية الدفع",
+                    type: PaymentErrorType.wallet,
+                  ),
+                );
+              }
             }
-          } else {
-            print("Wallet payment failed: ${paymentResponse.message}");
-            errorMessage = paymentResponse.message ?? "فشل في عملية الدفع";
+          } catch (e) {
+            if (!paymentCompleter.isCompleted) {
+              paymentCompleter.completeError(_createPaymentException(e));
+            }
           }
         },
       );
 
-      if (!paymentCompleted) {
-        throw Exception(errorMessage ?? "فشل في إتمام عملية الدفع");
-      }
+      await paymentCompleter.future.timeout(
+        Duration(minutes: 5),
+        onTimeout: () {
+          throw PaymentException(
+            message: "انتهت مهلة عملية الدفع",
+            type: PaymentErrorType.timeout,
+          );
+        },
+      );
     } catch (e) {
-      print("Payment with wallet error: $e");
-      // تحسين رسالة الخطأ
-      String errorMsg = e.toString();
-      if (errorMsg.contains("Error getting API key")) {
-        errorMsg = "خطأ في مفتاح API - يرجى التحقق من صحة البيانات";
-      } else if (errorMsg.contains("Network")) {
-        errorMsg = "خطأ في الاتصال بالإنترنت";
-      }
-      throw Exception("خطأ في عملية الدفع بالمحفظة: $errorMsg");
+      throw _createPaymentException(e);
     }
   }
 
@@ -157,31 +150,36 @@ class PaymentServices {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        throw Exception("المستخدم غير مسجل الدخول");
+        throw PaymentException(
+          message: "المستخدم غير مسجل الدخول",
+          type: PaymentErrorType.general,
+        );
       }
-
-      print("Adding courses to user: ${user.uid}");
-      print("Courses: $courses");
 
       await _firestore.collection('users').doc(user.uid).update({
         "onGoing": FieldValue.arrayUnion(courses),
         "cart": [],
       });
-
-      print("Courses added successfully to Firestore");
+    } on FirebaseException catch (e) {
+      throw PaymentException(
+        message: "خطأ في إضافة الكورسات للمستخدم",
+        type: PaymentErrorType.general,
+      );
     } catch (e) {
-      print("Error adding courses to user: $e");
-      throw Exception("خطأ في إضافة الكورسات للمستخدم: ${e.toString()}");
+      throw PaymentException(
+        message: "خطأ في إضافة الكورسات للمستخدم",
+        type: PaymentErrorType.general,
+      );
     }
   }
 
   Future<void> _initializePaymob() async {
     try {
-      print("Initializing Paymob...");
-
-      // التحقق من وجود الـ API key
       if (_apiKey.isEmpty || _apiKey == "YOUR_ACTUAL_API_KEY_HERE") {
-        throw Exception("API Key غير محدد - يرجى إضافة مفتاح API الصحيح");
+        throw PaymentException(
+          message: "API Key غير محدد - يرجى إضافة مفتاح API الصحيح",
+          type: PaymentErrorType.apiKey,
+        );
       }
 
       await _flutterPaymob.initialize(
@@ -190,23 +188,11 @@ class PaymentServices {
         walletIntegrationId: _walletIntegrationId,
         iFrameID: _iFrameID,
       );
-
-      print("Paymob initialized successfully");
     } catch (e) {
-      print("Error initializing Paymob: $e");
-
-      // تحسين رسالة الخطأ حسب نوع المشكلة
-      String errorMsg = e.toString();
-      if (errorMsg.contains("API Key")) {
-        errorMsg = "مفتاح API غير صحيح أو منتهي الصلاحية";
-      } else if (errorMsg.contains("Network") ||
-          errorMsg.contains("SocketException")) {
-        errorMsg = "خطأ في الاتصال بالإنترنت";
-      } else if (errorMsg.contains("integrationID")) {
-        errorMsg = "معرف التكامل غير صحيح";
-      }
-
-      throw Exception("خطأ في تهيئة نظام الدفع: $errorMsg");
+      throw PaymentException(
+        message: "خطأ في تهيئة نظام الدفع",
+        type: PaymentErrorType.initialization,
+      );
     }
   }
 
@@ -214,30 +200,29 @@ class PaymentServices {
     required AccessRequest accessRequest,
   }) async {
     try {
-      print("Creating access request...");
-
       String fileUrl = await uploadFile(file: accessRequest.attachment);
       accessRequest = accessRequest.updateFileUrl(fileUrl: fileUrl);
 
       await _firestore.collection('accessRequests').add(accessRequest.toJson());
-
-      print("Access request created successfully");
+    } on FirebaseException catch (e) {
+      throw PaymentException(
+        message: "خطأ في إنشاء طلب الوصول",
+        type: PaymentErrorType.accessRequest,
+      );
     } catch (e) {
-      print("Error creating access request: $e");
-      throw Exception("خطأ في إنشاء طلب الوصول: ${e.toString()}");
+      throw _createPaymentException(e);
     }
   }
 
   Future<String> uploadFile({required File file}) async {
     try {
-      print("Uploading file: ${file.path}");
-
-      // تحقق من وجود الملف
       if (!file.existsSync()) {
-        throw Exception("الملف غير موجود");
+        throw PaymentException(
+          message: "الملف غير موجود",
+          type: PaymentErrorType.fileUpload,
+        );
       }
 
-      // في الحالة الحقيقية، استخدم Firebase Storage
       final String fileName =
           'access_requests/${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
       final Reference ref = _firebaseStorage.ref().child(fileName);
@@ -245,19 +230,93 @@ class PaymentServices {
       final TaskSnapshot snapshot = await task.whenComplete(() {});
       final String downloadUrl = await snapshot.ref.getDownloadURL();
 
-      print("File uploaded successfully: $downloadUrl");
       return downloadUrl;
-
-      // return "https://images.pexels.com/photos/33356121/pexels-photo-33356121.jpeg";
+    } on FirebaseException catch (e) {
+      throw PaymentException(
+        message: "خطأ في رفع الملف",
+        type: PaymentErrorType.fileUpload,
+      );
     } catch (e) {
-      print("Error uploading file: $e");
-      throw Exception("خطأ في رفع الملف: ${e.toString()}");
+      throw PaymentException(
+        message: "خطأ في رفع الملف",
+        type: PaymentErrorType.fileUpload,
+      );
     }
   }
 
-  // طريقة للتحقق من حالة اتصال Paymob
-  Future<bool> checkPaymobConnection() async {
-    await _initializePaymob();
-    return true;
+  void _validatePaymentInput(List<String> courses, double price) {
+    if (courses.isEmpty) {
+      throw PaymentException(
+        message: "قائمة الكورسات فارغة",
+        type: PaymentErrorType.general,
+      );
+    }
+
+    if (price <= 0) {
+      throw PaymentException(
+        message: "المبلغ غير صحيح",
+        type: PaymentErrorType.general,
+      );
+    }
+  }
+
+  PaymentException _createPaymentException(Object e) {
+    if (e is PaymentException) {
+      return e;
+    }
+
+    final errorMsg = e.toString().toLowerCase();
+
+    if (errorMsg.contains("api key")) {
+      return PaymentException(
+        message: e.toString(),
+        type: PaymentErrorType.apiKey,
+      );
+    } else if (errorMsg.contains("network") || errorMsg.contains("internet")) {
+      return PaymentException(
+        message: e.toString(),
+        type: PaymentErrorType.network,
+      );
+    } else if (errorMsg.contains("payment failed")) {
+      return PaymentException(
+        message: e.toString(),
+        type: PaymentErrorType.paymentFailed,
+      );
+    } else if (errorMsg.contains("insufficient funds")) {
+      return PaymentException(
+        message: e.toString(),
+        type: PaymentErrorType.insufficientFunds,
+      );
+    } else if (errorMsg.contains("invalid card")) {
+      return PaymentException(
+        message: e.toString(),
+        type: PaymentErrorType.invalidCard,
+      );
+    } else if (errorMsg.contains("expired")) {
+      return PaymentException(
+        message: e.toString(),
+        type: PaymentErrorType.expired,
+      );
+    } else if (errorMsg.contains("timeout")) {
+      return PaymentException(
+        message: e.toString(),
+        type: PaymentErrorType.timeout,
+      );
+    } else if (errorMsg.contains("wallet")) {
+      return PaymentException(
+        message: e.toString(),
+        type: PaymentErrorType.wallet,
+      );
+    } else if (errorMsg.contains("file") || errorMsg.contains("upload")) {
+      return PaymentException(
+        message: e.toString(),
+        type: PaymentErrorType.fileUpload,
+      );
+    }
+
+    return PaymentException(
+      message: e.toString().replaceAll('Exception: ', ''),
+      type: PaymentErrorType.general,
+    );
   }
 }

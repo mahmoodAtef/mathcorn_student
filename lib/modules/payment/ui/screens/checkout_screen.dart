@@ -694,7 +694,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         duration: Duration(seconds: 3),
       ),
     );
-    context.pushAndRemove(MainScreen());
+
+    Future.delayed(Duration(milliseconds: 500), () {
+      if (context.mounted) {
+        context.pushAndRemove(MainScreen());
+      }
+    });
   }
 
   void _showErrorMessage(BuildContext context, String message) {
@@ -703,7 +708,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: theme.colorScheme.error,
-        duration: Duration(seconds: 3),
+        duration: Duration(seconds: 4),
       ),
     );
   }

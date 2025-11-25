@@ -3,7 +3,7 @@ import 'package:math_corn/core/error/exception_manager.dart';
 import 'package:math_corn/core/services/localization_manager.dart';
 import 'package:math_corn/core/utils/assets_manager.dart';
 
-class FirebaseAuthExceptionHandler implements ExceptionHandler {
+class FirebaseAuthExceptionHandler extends ExceptionHandler {
   @override
   String handle(Exception exception) {
     if (exception is FirebaseAuthException) {

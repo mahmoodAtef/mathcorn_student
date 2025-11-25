@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:math_corn/core/error/custom_exceptions/payment_exception.dart';
 import 'package:math_corn/core/error/handlers/auth_exception_handler.dart';
 import 'package:math_corn/core/error/handlers/firebase_exception_handler.dart';
+import 'package:math_corn/core/error/handlers/payment_exception_handler.dart';
 
 import 'handlers/unexpected_exception_handler.dart';
 
@@ -11,9 +13,10 @@ abstract class ExceptionHandler {
 }
 
 class ExceptionManager {
-  static final Map<Type, ExceptionHandler> _handlers = {
+  static final Map<Type, dynamic> _handlers = {
     FirebaseAuthException: FirebaseAuthExceptionHandler(),
     FirebaseException: FirebaseExceptionHandler(),
+    PaymentException: PaymentExceptionHandler(), // إضافة handler الجديد
     UnexpectedExceptionHandler: UnexpectedExceptionHandler(),
   };
 

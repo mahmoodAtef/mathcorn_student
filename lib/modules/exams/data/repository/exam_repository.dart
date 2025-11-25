@@ -6,7 +6,7 @@ class ExamRepository {
 
   ExamRepository(this._examServices);
 
-  Future<Exam> getExam(String examId) async {
+  Future<Exam?> getExam(String examId) async {
     return _examServices.getExam(examId);
   }
 }
