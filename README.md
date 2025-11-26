@@ -108,4 +108,7 @@ flutter run
 
 | Login Screen | Home Dashboard | Course Details |
 | :---: | :---: | :---: |
-| ![Login](assets/images/placeholder_login.png) | ![Home](assets/images/placeholder_home.png) | ![Course](assets/images/placeholder_course.png) |
+| ![Login](![95d6ec6a-4e0d-4079-9e5d-9c9d0091b77c](https://github.com/user-attachments/assets/82df6f51-5494-41bc-b259-2913b857f64d)
+) | ![Home](![b8daef86-c43d-4940-bc50-b38921305d47](https://github.com/user-attachments/assets/7a1e193f-f573-42a2-b509-aeeb58799bd0)
+) | ![Course](![1efaec60-5f07-4f73-b4f9-52d2bb1eaaf9](https://github.com/user-attachments/assets/fe94b4bf-fdba-4424-b91c-0018291c7743)
+) |
