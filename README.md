@@ -105,10 +105,10 @@ flutter run
 ```
 
 ## Screenshots
+<img width="1920" height="1080" alt="4" src="https://github.com/user-attachments/assets/c36bafd5-136d-4ed9-aea4-8fb71c8b6e9f" />
+<img width="1920" height="1080" alt="3" src="https://github.com/user-attachments/assets/fb267d51-1158-4fd9-81bd-9f4217074aad" />
+<img width="1920" height="1080" alt="2" src="https://github.com/user-attachments/assets/50368b2f-c95a-43b5-a9f3-4f0733395164" />
+<img width="1920" height="1080" alt="1" src="https://github.com/user-attachments/assets/fde624a2-640b-446f-a5ca-f8fd57eb31ad" />
+<img width="1920" height="1080" alt="6" src="https://github.com/user-attachments/assets/42046c78-e986-4518-a4f6-3407f3789371" />
+<img width="1920" height="1080" alt="5" src="https://github.com/user-attachments/assets/351cf4ae-b5e3-4c77-b12d-8d69b0c93444" />
 
-| Login Screen | Home Dashboard | Course Details |
-| :---: | :---: | :---: |
-| ![Login](![95d6ec6a-4e0d-4079-9e5d-9c9d0091b77c](https://github.com/user-attachments/assets/82df6f51-5494-41bc-b259-2913b857f64d)
-) | ![Home](![b8daef86-c43d-4940-bc50-b38921305d47](https://github.com/user-attachments/assets/7a1e193f-f573-42a2-b509-aeeb58799bd0)
-) | ![Course](![1efaec60-5f07-4f73-b4f9-52d2bb1eaaf9](https://github.com/user-attachments/assets/fe94b4bf-fdba-4424-b91c-0018291c7743)
-) |
