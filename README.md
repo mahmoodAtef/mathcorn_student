@@ -19,6 +19,14 @@ MathCorn aims to digitize the learning process, making it accessible and engagin
 -   **Settings**: Customizable app experience with Theme switching (Dark/Light mode) and Localization (Multi-language support).
 -   **Offline Support**: Caching and local storage for essential data.
 
+## Screenshots
+<img width="1920" height="1080" alt="4" src="https://github.com/user-attachments/assets/c36bafd5-136d-4ed9-aea4-8fb71c8b6e9f" />
+<img width="1920" height="1080" alt="3" src="https://github.com/user-attachments/assets/fb267d51-1158-4fd9-81bd-9f4217074aad" />
+<img width="1920" height="1080" alt="2" src="https://github.com/user-attachments/assets/50368b2f-c95a-43b5-a9f3-4f0733395164" />
+<img width="1920" height="1080" alt="1" src="https://github.com/user-attachments/assets/fde624a2-640b-446f-a5ca-f8fd57eb31ad" />
+<img width="1920" height="1080" alt="6" src="https://github.com/user-attachments/assets/42046c78-e986-4518-a4f6-3407f3789371" />
+<img width="1920" height="1080" alt="5" src="https://github.com/user-attachments/assets/351cf4ae-b5e3-4c77-b12d-8d69b0c93444" />
+
 ## Tech Stack & Dependencies
 
 This project relies on a modern tech stack to ensure performance and scalability:
@@ -103,12 +111,4 @@ Run the application on your preferred device or emulator:
 ```bash
 flutter run
 ```
-
-## Screenshots
-<img width="1920" height="1080" alt="4" src="https://github.com/user-attachments/assets/c36bafd5-136d-4ed9-aea4-8fb71c8b6e9f" />
-<img width="1920" height="1080" alt="3" src="https://github.com/user-attachments/assets/fb267d51-1158-4fd9-81bd-9f4217074aad" />
-<img width="1920" height="1080" alt="2" src="https://github.com/user-attachments/assets/50368b2f-c95a-43b5-a9f3-4f0733395164" />
-<img width="1920" height="1080" alt="1" src="https://github.com/user-attachments/assets/fde624a2-640b-446f-a5ca-f8fd57eb31ad" />
-<img width="1920" height="1080" alt="6" src="https://github.com/user-attachments/assets/42046c78-e986-4518-a4f6-3407f3789371" />
-<img width="1920" height="1080" alt="5" src="https://github.com/user-attachments/assets/351cf4ae-b5e3-4c77-b12d-8d69b0c93444" />
 
